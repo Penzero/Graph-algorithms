@@ -95,6 +95,13 @@ class TestGraph(unittest.TestCase):
             print(iterator.get_path_length())
             iterator.next()
 
+    def test_create_from_metro_file(self):
+        g = Graph(reversible=True, weighted=True)
+        g.create_from_metro_file("input.txt")
+        self.assertEqual(g.get_n(), 5)
+        self.assertTrue(any(weight != 0 for row in g.get_graph() for weight in row))
+        print(g)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -15,7 +15,7 @@ class Graph:
     def add_vertex(self):
         self.__nodes += 1
         for row in self.__graph:
-            row.append(0)  # Use 0 to indicate no connection
+            row.append(0)
         self.__graph.append([0] * self.__nodes)
 
     def add_edge(self, vertex1, vertex2, weight=1):
@@ -116,6 +116,53 @@ class Graph:
                     graph.add_edge(vertex1, vertex2)
 
             return graph
+
+    @staticmethod
+    def create_from_metro_file(file_content, transfer_penalty=9):
+        # Instantiate the graph
+        graph = Graph(reversible=True, weighted=True)
+        station_to_vertex = {}  # Maps station names to vertex indices
+        vertex_to_station = {}  # Maps vertex indices to station names
+
+        lines = file_content.strip().split('\n')
+        for line in lines:
+            parts = line.split(',')
+            metro_line = parts[0]
+            stations = parts[1:]
+
+            last_station = None
+            total_time = 0  # Accumulated time from the start of the line
+
+            for station_info in stations:
+                station_name, travel_time = station_info.strip('()').split(';')
+                travel_time = int(travel_time)
+
+                # Create or retrieve the vertex for the station
+                if station_name not in station_to_vertex:
+                    station_to_vertex[station_name] = len(station_to_vertex)
+                    vertex_to_station[len(station_to_vertex)] = station_name
+                    graph.add_vertex()
+
+                current_vertex = station_to_vertex[station_name]
+
+                # Add edge from the last station to the current one
+                if last_station is not None:
+                    graph.add_edge(station_to_vertex[last_station], current_vertex, total_time)
+
+                # Update for the next iteration
+                last_station = station_name
+                total_time = travel_time
+
+            # Adding transfer penalty edges for stations present on multiple lines
+            for station in stations:
+                station_name = station.strip('()').split(';')[0]
+                for other_station, vertex_id in station_to_vertex.items():
+                    if other_station != station_name:
+                        if not graph.is_edge(vertex_id, station_to_vertex[station_name]):
+                            # Add the transfer penalty edge
+                            graph.add_edge(vertex_id, station_to_vertex[station_name], transfer_penalty)
+
+        return graph, station_to_vertex, vertex_to_station
 
     def __str__(self):
         graph_str = ""
