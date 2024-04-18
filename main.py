@@ -19,7 +19,7 @@ def print_menu(graph):
 
 
 if __name__ == "__main__":
-    graph = Graph.create_from_file("graph.txt")
+    graph = Graph.create_from_metro_file("input.txt")
     while True:
         try:
             print_menu(graph)

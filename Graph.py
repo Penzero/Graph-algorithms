@@ -118,51 +118,85 @@ class Graph:
             return graph
 
     @staticmethod
-    def create_from_metro_file(file_content, transfer_penalty=9):
+    def create_from_metro_file(file_name, transfer_penalty=3):
         # Instantiate the graph
         graph = Graph(reversible=True, weighted=True)
         station_to_vertex = {}  # Maps station names to vertex indices
         vertex_to_station = {}  # Maps vertex indices to station names
 
-        lines = file_content.strip().split('\n')
-        for line in lines:
-            parts = line.split(',')
-            metro_line = parts[0]
-            stations = parts[1:]
+        with open(file_name, "r") as file:
+            for line in file:
+                parts = line.split(',')
+                metro_line = parts[0]
+                stations = parts[1:]
 
-            last_station = None
-            total_time = 0  # Accumulated time from the start of the line
+                last_station = None
+                total_time = 0  # Accumulated time from the start of the line
 
-            for station_info in stations:
-                station_name, travel_time = station_info.strip('()').split(';')
-                travel_time = int(travel_time)
+                for station_info in stations:
+                    station_info = station_info.strip()
+                    station_name, travel_time = station_info.strip('()').split(';')
+                    travel_time = int(travel_time.strip())
 
-                # Create or retrieve the vertex for the station
-                if station_name not in station_to_vertex:
-                    station_to_vertex[station_name] = len(station_to_vertex)
-                    vertex_to_station[len(station_to_vertex)] = station_name
-                    graph.add_vertex()
+                    # Create or retrieve the vertex for the station
+                    if station_name not in station_to_vertex:
+                        station_to_vertex[station_name] = len(station_to_vertex)
+                        vertex_to_station[len(station_to_vertex)] = station_name
+                        graph.add_vertex()
 
-                current_vertex = station_to_vertex[station_name]
+                    current_vertex = station_to_vertex[station_name]
 
-                # Add edge from the last station to the current one
-                if last_station is not None:
-                    graph.add_edge(station_to_vertex[last_station], current_vertex, total_time)
+                    # Add edge from the last station to the current one
+                    if last_station is not None:
+                        graph.add_edge(station_to_vertex[last_station], current_vertex, total_time)
 
-                # Update for the next iteration
-                last_station = station_name
-                total_time = travel_time
+                    # Update for the next iteration
+                    last_station = station_name
+                    total_time = travel_time
 
-            # Adding transfer penalty edges for stations present on multiple lines
-            for station in stations:
-                station_name = station.strip('()').split(';')[0]
-                for other_station, vertex_id in station_to_vertex.items():
-                    if other_station != station_name:
-                        if not graph.is_edge(vertex_id, station_to_vertex[station_name]):
-                            # Add the transfer penalty edge
-                            graph.add_edge(vertex_id, station_to_vertex[station_name], transfer_penalty)
+                # Adding transfer penalty edges for stations present on multiple lines
+                for station in stations:
+                    station_name = station.strip('()').split(';')[0]
+                    for other_station, vertex_id in station_to_vertex.items():
+                        if other_station != station_name:
+                            if not graph.is_edge(vertex_id, station_to_vertex[station_name]):
+                                # Add the transfer penalty edge
+                                graph.add_edge(vertex_id, station_to_vertex[station_name], transfer_penalty)
 
         return graph, station_to_vertex, vertex_to_station
+
+    def dijkstra(self, start_vertex):
+        # Holds the shortest path distance from start_vertex to every other vertex
+        distances = [float('infinity')] * self.get_n()
+        distances[start_vertex] = 0
+
+        # Tracks which vertices have been visited
+        visited = [False] * self.get_n()
+
+        for _ in range(self.get_n()):
+            # Find the unvisited vertex with the smallest distance
+            min_distance = float('infinity')
+            min_vertex = None
+            for vertex in range(self.get_n()):
+                if not visited[vertex] and distances[vertex] < min_distance:
+                    min_distance = distances[vertex]
+                    min_vertex = vertex
+
+            # Mark the vertex as visited
+            visited[min_vertex] = True
+
+            # Update the distances to the neighboring vertices
+            for neighbor in range(self.get_n()):
+                edge_weight = self.__graph[min_vertex][neighbor]
+                if edge_weight > 0 and not visited[neighbor]:  # Check for an edge and unvisited neighbor
+                    new_distance = min_distance + edge_weight
+                    if new_distance < distances[neighbor]:
+                        distances[neighbor] = new_distance
+
+        return distances
+
+    def adjacent_edges(self, vertex):
+        return [(i, self.__graph[vertex][i]) for i in range(self.get_n()) if self.__graph[vertex][i] != 0]
 
     def __str__(self):
         graph_str = ""
