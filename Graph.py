@@ -7,42 +7,42 @@ class Graph:
         self.__nodes = 0
         self.__reversible = reversible
         self.__weighted = weighted  # Indicates if the graph is weighted
-        self.__graph = []
+        self._graph = []
 
     def get_graph(self):
-        return self.__graph
+        return self._graph
 
     def add_vertex(self):
         self.__nodes += 1
-        for row in self.__graph:
+        for row in self._graph:
             row.append(0)
-        self.__graph.append([0] * self.__nodes)
+        self._graph.append([0] * self.__nodes)
 
     def add_edge(self, vertex1, vertex2, weight=1):
         if vertex1 < 0 or vertex2 < 0 or vertex1 >= self.__nodes or vertex2 >= self.__nodes:
             raise ValueError("One or both of the vertices are not in the graph")
         if not self.__weighted:
             weight = 1  # Ensures compatibility with unweighted graphs
-        self.__graph[vertex1][vertex2] = weight
+        self._graph[vertex1][vertex2] = weight
         if self.__reversible:
-            self.__graph[vertex2][vertex1] = weight
+            self._graph[vertex2][vertex1] = weight
 
     def remove_edge(self, vertex1, vertex2):
-        self.__graph[vertex1][vertex2] = 0
+        self._graph[vertex1][vertex2] = 0
         if self.__reversible:
-            self.__graph[vertex2][vertex1] = 0
+            self._graph[vertex2][vertex1] = 0
 
     def remove_vertex(self, vertex):
         if vertex < 0 or vertex >= self.__nodes:
             raise ValueError("The vertex is not in the graph")
         self.__nodes -= 1
-        self.__graph.pop(vertex)
-        for row in self.__graph:
+        self._graph.pop(vertex)
+        for row in self._graph:
             row.pop(vertex)
 
     def create_random(self, n, max_weight=10):
         self.__nodes = n
-        self.__graph = [[0] * n for _ in range(n)]
+        self._graph = [[0] * n for _ in range(n)]
         for i in range(n):
             for j in range(i + 1, n):
                 if random.random() < 0.5:
@@ -56,32 +56,32 @@ class Graph:
         edges = []
         for i in range(self.__nodes):
             for j in range(self.__nodes):
-                if self.__graph[i][j] != 0:
-                    edges.append((i, j, self.__graph[i][j]) if self.__weighted else (i, j))
+                if self._graph[i][j] != 0:
+                    edges.append((i, j, self._graph[i][j]) if self.__weighted else (i, j))
         return edges
 
     def deg(self, x):
-        return sum(1 for weight in self.__graph[x] if weight != 0)
+        return sum(1 for weight in self._graph[x] if weight != 0)
 
     def is_edge(self, x, y):
-        return self.__graph[x][y] != 0
+        return self._graph[x][y] != 0
 
     def outbound_edges(self, x):
         if self.__reversible:
             return "This function is only available for non-reversible graphs"
-        return [(x, i, self.__graph[x][i]) for i in range(self.__nodes) if self.__graph[x][i] != 0] if self.__weighted \
-            else [i for i in range(self.__nodes) if self.__graph[x][i] != 0]
+        return [(x, i, self._graph[x][i]) for i in range(self.__nodes) if self._graph[x][i] != 0] if self.__weighted \
+            else [i for i in range(self.__nodes) if self._graph[x][i] != 0]
 
     def inbound_edges(self, x):
         if self.__reversible:
             return "This function is only available for non-reversible graphs."
-        return [(i, x, self.__graph[i][x]) for i in range(self.__nodes) if self.__graph[i][x] != 0] if self.__weighted \
-            else [i for i in range(self.__nodes) if self.__graph[i][x] != 0]
+        return [(i, x, self._graph[i][x]) for i in range(self.__nodes) if self._graph[i][x] != 0] if self.__weighted \
+            else [i for i in range(self.__nodes) if self._graph[i][x] != 0]
 
     def copy_graph(self):
         new_graph = Graph(self.__reversible, self.__weighted)
         new_graph.__nodes = self.__nodes
-        new_graph.__graph = [row[:] for row in self.__graph]
+        new_graph._graph = [row[:] for row in self._graph]
         return new_graph
 
     def is_reversible(self):
@@ -117,93 +117,12 @@ class Graph:
 
             return graph
 
-    @staticmethod
-    def create_from_metro_file(file_name, transfer_penalty=3):
-        # Instantiate the graph
-        graph = Graph(reversible=True, weighted=True)
-        station_to_vertex = {}  # Maps station names to vertex indices
-        vertex_to_station = {}  # Maps vertex indices to station names
-
-        with open(file_name, "r") as file:
-            for line in file:
-                parts = line.split(',')
-                metro_line = parts[0]
-                stations = parts[1:]
-
-                last_station = None
-                total_time = 0  # Accumulated time from the start of the line
-
-                for station_info in stations:
-                    station_info = station_info.strip()
-                    station_name, travel_time = station_info.strip('()').split(';')
-                    travel_time = int(travel_time.strip())
-
-                    # Create or retrieve the vertex for the station
-                    if station_name not in station_to_vertex:
-                        station_to_vertex[station_name] = len(station_to_vertex)
-                        vertex_to_station[len(station_to_vertex)] = station_name
-                        graph.add_vertex()
-
-                    current_vertex = station_to_vertex[station_name]
-
-                    # Add edge from the last station to the current one
-                    if last_station is not None:
-                        graph.add_edge(station_to_vertex[last_station], current_vertex, total_time)
-
-                    # Update for the next iteration
-                    last_station = station_name
-                    total_time = travel_time
-
-                # Adding transfer penalty edges for stations present on multiple lines
-                for station in stations:
-                    station_name = station.strip('()').split(';')[0]
-                    for other_station, vertex_id in station_to_vertex.items():
-                        if other_station != station_name:
-                            if not graph.is_edge(vertex_id, station_to_vertex[station_name]):
-                                # Add the transfer penalty edge
-                                graph.add_edge(vertex_id, station_to_vertex[station_name], transfer_penalty)
-
-        return graph, station_to_vertex, vertex_to_station
-
-    def dijkstra(self, start_vertex):
-        # Holds the shortest path distance from start_vertex to every other vertex
-        distances = [float('infinity')] * self.get_n()
-        distances[start_vertex] = 0
-
-        # Tracks which vertices have been visited
-        visited = [False] * self.get_n()
-
-        for _ in range(self.get_n()):
-            # Find the unvisited vertex with the smallest distance
-            min_distance = float('infinity')
-            min_vertex = None
-            for vertex in range(self.get_n()):
-                if not visited[vertex] and distances[vertex] < min_distance:
-                    min_distance = distances[vertex]
-                    min_vertex = vertex
-
-            # Mark the vertex as visited
-            visited[min_vertex] = True
-
-            # Update the distances to the neighboring vertices
-            for neighbor in range(self.get_n()):
-                edge_weight = self.__graph[min_vertex][neighbor]
-                if edge_weight > 0 and not visited[neighbor]:  # Check for an edge and unvisited neighbor
-                    new_distance = min_distance + edge_weight
-                    if new_distance < distances[neighbor]:
-                        distances[neighbor] = new_distance
-
-        return distances
-
-    def adjacent_edges(self, vertex):
-        return [(i, self.__graph[vertex][i]) for i in range(self.get_n()) if self.__graph[vertex][i] != 0]
-
     def __str__(self):
         graph_str = ""
         for i in range(self.__nodes):
             for j in range(self.__nodes):
-                if self.__graph[i][j] != 0:
-                    weight_str = f" Weight: {self.__graph[i][j]}" if self.__weighted else ""
+                if self._graph[i][j] != 0:
+                    weight_str = f" Weight: {self._graph[i][j]}" if self.__weighted else ""
                     graph_str += f"Edge: {i} -> {j}{weight_str}\n"
         return graph_str.strip()
 
