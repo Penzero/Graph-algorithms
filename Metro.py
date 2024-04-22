@@ -42,7 +42,7 @@ class Metro(Graph):
         for station in self.__station_nodes:
             for from_vertex in self.__station_nodes[station]:
                 for to_vertex in self.__station_nodes[station]:
-                    if from_vertex != to_vertex:
+                    if from_vertex < to_vertex:
                         self.add_edge(from_vertex, to_vertex, 3)
 
     def dijkstra(self, start_station: str = None):
