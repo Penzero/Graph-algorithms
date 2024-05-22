@@ -1,5 +1,5 @@
-import random
 from GraphIterator import GraphIterator
+import random
 
 
 class Graph:
@@ -128,3 +128,65 @@ class Graph:
 
     def __repr__(self):
         return self.__str__()
+
+    def is_dag(self):
+        """Check if the graph is a DAG using DFS."""
+        visited = [False] * self.__nodes
+        rec_stack = [False] * self.__nodes
+
+        def dfs(v):
+            visited[v] = True
+            rec_stack[v] = True
+
+            for i in range(self.__nodes):
+                if self._graph[v][i] != 0:
+                    if not visited[i]:
+                        if dfs(i):
+                            return True
+                    elif rec_stack[i]:
+                        return True
+
+            rec_stack[v] = False
+            return False
+
+        for node in range(self.__nodes):
+            if not visited[node]:
+                if dfs(node):
+                    return False
+        return True
+
+    def topological_sort(self):
+        """Perform topological sort on the graph."""
+        visited = [False] * self.__nodes
+        stack = []
+
+        def dfs(v):
+            visited[v] = True
+            for i in range(self.__nodes):
+                if self._graph[v][i] != 0 and not visited[i]:
+                    dfs(i)
+            stack.append(v)
+
+        for i in range(self.__nodes):
+            if not visited[i]:
+                dfs(i)
+
+        stack.reverse()
+        return stack
+
+    def count_paths(self, start, end):
+        """Count the number of distinct paths from start to end in a DAG."""
+        if not self.is_dag():
+            return "The graph is not a DAG."
+
+        top_order = self.topological_sort()
+        paths = [0] * self.__nodes
+        paths[start] = 1
+
+        for node in top_order:
+            if paths[node] != 0:
+                for i in range(self.__nodes):
+                    if self._graph[node][i] != 0:
+                        paths[i] += paths[node]
+
+        return paths[end]

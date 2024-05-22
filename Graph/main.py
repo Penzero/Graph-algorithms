@@ -16,6 +16,9 @@ def print_menu(graph):
     print("9. Display graph")
     print("10. Depth-first search")
     print("11. Get path length")
+    print("12. Check if graph is DAG")
+    print("13. Topological sort")
+    print("14. Count distinct paths between two vertices")
     print("0. Exit")
 
 
@@ -88,6 +91,23 @@ if __name__ == "__main__":
                     while iterator.valid():
                         print(iterator.get_path_length())
                         iterator.next()
+                elif command == "12":
+                    if graph.is_dag():
+                        print("The graph is a DAG.")
+                    else:
+                        print("The graph is not a DAG.")
+                elif command == "13":
+                    if graph.is_dag():
+                        print("Topological Sort: ", graph.topological_sort())
+                    else:
+                        print("The graph is not a DAG, cannot perform topological sort.")
+                elif command == "14":
+                    start_vertex = int(input("Enter start vertex: "))
+                    end_vertex = int(input("Enter end vertex: "))
+                    if graph.is_dag():
+                        print(f"Number of distinct paths from {start_vertex} to {end_vertex}: {graph.count_paths(start_vertex, end_vertex)}")
+                    else:
+                        print("The graph is not a DAG, cannot count distinct paths.")
                 elif command == "0":
                     break
                 else:
