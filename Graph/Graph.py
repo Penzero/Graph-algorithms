@@ -2,12 +2,11 @@ from GraphIterator import GraphIterator
 import random
 
 
-class Tree:
-    class TreeNode:
-        def __init__(self, value=0):
-            self.value = value
-            self.left = None
-            self.right = None
+class TreeNode:
+    def __init__(self, value=0):
+        self.value = value
+        self.left = None
+        self.right = None
 
 
 class Graph:
@@ -25,6 +24,7 @@ class Graph:
         for row in self._graph:
             row.append(0)
         self._graph.append([0] * self.__nodes)
+        return self.__nodes - 1
 
     def add_edge(self, vertex1, vertex2, weight=1):
         if vertex1 < 0 or vertex2 < 0 or vertex1 >= self.__nodes or vertex2 >= self.__nodes:
@@ -73,7 +73,7 @@ class Graph:
         return edges
 
     def deg(self, x):
-        return sum(1 for weight in self._graph[x] if weight != 0)
+        return sum(1 for weight in self._graph[x] if weight != 0)+sum(1 for weight in self._graph if weight[x] != 0)
 
     def is_edge(self, x, y):
         return self._graph[x][y] != 0
@@ -252,3 +252,68 @@ class Graph:
         print(" " * (depth * 2) + label + str(root.value))
         self.print_tree(root.left, depth + 1, "L---")
         self.print_tree(root.right, depth + 1, "R---")
+
+    def is_eulerian(self):
+        """Check if the graph is Eulerian."""
+        if not self.__is_connected():
+            print("The graph is not connected.")
+            return False
+
+        for i in range(self.__nodes):
+            if self.deg(i) % 2 != 0:
+                print(f"Vertex {i} has an odd degree.")
+                return False
+
+        return True
+
+    def __is_connected(self):
+        """Check if the graph is connected."""
+        visited = [False] * self.__nodes
+
+        def dfs(v):
+            visited[v] = True
+            for i in range(self.__nodes):
+                if self._graph[v][i] != 0 and not visited[i]:
+                    dfs(i)
+
+        # Find a vertex with a non-zero degree
+        start_vertex = next((i for i in range(self.__nodes) if self.deg(i) > 0), None)
+        if start_vertex is None:
+            return True
+
+        # Perform DFS from the found vertex
+        dfs(start_vertex)
+
+        # Check if all vertices with non-zero degree are connected
+        return all(visited[i] or self.deg(i) == 0 for i in range(self.__nodes))
+
+    def find_eulerian_circuit(self):
+        """Find an Eulerian circuit using Hierholzer's algorithm."""
+        if not self.is_eulerian():
+            return "The graph is not Eulerian."
+
+        graph_copy = self.copy_graph()
+        circuit = []
+        current_path = []
+
+        # Start from any vertex with an edge
+        current_vertex = next((i for i in range(self.__nodes) if self.deg(i) > 0), None)
+        if current_vertex is None:
+            return circuit
+
+        current_path.append(current_vertex)
+
+        while current_path:
+            if any(graph_copy._graph[current_vertex]):
+                next_vertex = graph_copy._graph[current_vertex].index(
+                    next(filter(lambda x: x > 0, graph_copy._graph[current_vertex])))
+                current_path.append(current_vertex)
+                graph_copy.remove_edge(current_vertex, next_vertex)
+                current_vertex = next_vertex
+            else:
+                circuit.append(current_vertex)
+                current_vertex = current_path.pop()
+
+        circuit.reverse()
+        return circuit
+

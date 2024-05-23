@@ -2,6 +2,12 @@ from Graph import Graph
 from Metro import Metro
 
 
+def postorder_traversal(root):
+    if not root:
+        return []
+    return postorder_traversal(root.left) + postorder_traversal(root.right) + [root.value]
+
+
 def print_menu(graph):
     print("Graph type: " + ("Undirected" if graph.is_reversible() else "Directed") +
           ", " + ("Weighted" if graph.is_weighted() else "Unweighted"))
@@ -19,8 +25,10 @@ def print_menu(graph):
     print("12. Check if graph is DAG")
     print("13. Topological sort")
     print("14. Count distinct paths between two vertices")
+    print("15. Reconstruct tree from traversals")
+    print("16. Check if graph is Eulerian")
+    print("17. Find Eulerian circuit")
     print("0. Exit")
-
 
 if __name__ == "__main__":
     command = input("Choose what graph do you want to use (Graph/Metro): ")
@@ -61,17 +69,9 @@ if __name__ == "__main__":
                     print("Edge removed.")
                 elif command == "5":
                     n = int(input("Enter number of vertices: "))
-                    directed_input = input("Directed graph (y/n): ")
-                    weight_input = input("Weighted graph (y/n): ")
-                    if directed_input == "y":
-                        directed = True
-                    else:
-                        directed = False
-                    if weight_input == "y":
-                        weighted = True
-                    else:
-                        weighted = False
-                    graph.create_random(n, directed, weighted)
+                    directed = input("Is the graph directed? (yes/no): ").strip().lower() == 'yes'
+                    weighted = input("Is the graph weighted? (yes/no): ").strip().lower() == 'yes'
+                    graph.create_random(n, directed=directed, weighted=weighted)
                     print(graph)
                     print()
                     print("Random graph created.")
@@ -118,16 +118,44 @@ if __name__ == "__main__":
                         print(f"Number of distinct paths from {start_vertex} to {end_vertex}: {graph.count_paths(start_vertex, end_vertex)}")
                     else:
                         print("The graph is not a DAG, cannot count distinct paths.")
+                elif command == "15":
+                    inorder = list(map(int, input("Enter inorder traversal (space-separated): ").split()))
+                    preorder = list(map(int, input("Enter preorder traversal (space-separated): ").split()))
+                    postorder = list(map(int, input("Enter postorder traversal (space-separated): ").split()))
+                    tree_root = graph.build_tree_from_inorder_preorder(inorder, preorder)
+                    graph.add_tree_edges(tree_root)
+                    print("Tree constructed and added to the graph.")
+                    graph.print_tree(tree_root)
+                    reconstructed_postorder = postorder_traversal(tree_root)
+                    print("Reconstructed Postorder:", reconstructed_postorder)
+                    print("Original Postorder:", postorder)
+                    print("Match:", reconstructed_postorder == postorder)
+                elif command == "16":
+                    if graph.is_eulerian():
+                        print("The graph is Eulerian.")
+                    else:
+                        print("The graph is not Eulerian.")
+                elif command == "17":
+                    if graph.is_eulerian():
+                        circuit = graph.find_eulerian_circuit()
+                        print("Eulerian Circuit:", circuit)
+                    else:
+                        print("The graph is not Eulerian.")
                 elif command == "0":
                     break
                 else:
                     print("Invalid command")
 
+                inp = input("Do you want to continue? (y/n): ")
+                if inp == 'n':
+                    break
+                print()
+
             except Exception as e:
                 print(e)
                 print()
 
-    if command == "Metro":
+    elif command == "Metro":
         metro = Metro()
         metro.create_metro_from_file("input.txt")
 
@@ -148,3 +176,6 @@ if __name__ == "__main__":
             except Exception as e:
                 print(e)
                 print()
+
+
+
