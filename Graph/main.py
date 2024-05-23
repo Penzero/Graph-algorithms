@@ -3,7 +3,7 @@ from Metro import Metro
 
 
 def print_menu(graph):
-    print("Graph type: " + ("Directed" if graph.is_reversible() else "Undirected") +
+    print("Graph type: " + ("Undirected" if graph.is_reversible() else "Directed") +
           ", " + ("Weighted" if graph.is_weighted() else "Unweighted"))
     print("1. Add vertex")
     print("2. Add edge")
@@ -61,7 +61,17 @@ if __name__ == "__main__":
                     print("Edge removed.")
                 elif command == "5":
                     n = int(input("Enter number of vertices: "))
-                    graph.create_random(n)
+                    directed_input = input("Directed graph (y/n): ")
+                    weight_input = input("Weighted graph (y/n): ")
+                    if directed_input == "y":
+                        directed = True
+                    else:
+                        directed = False
+                    if weight_input == "y":
+                        weighted = True
+                    else:
+                        weighted = False
+                    graph.create_random(n, directed, weighted)
                     print(graph)
                     print()
                     print("Random graph created.")

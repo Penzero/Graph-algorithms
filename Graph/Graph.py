@@ -2,11 +2,19 @@ from GraphIterator import GraphIterator
 import random
 
 
+class Tree:
+    class TreeNode:
+        def __init__(self, value=0):
+            self.value = value
+            self.left = None
+            self.right = None
+
+
 class Graph:
-    def __init__(self, reversible: bool, weighted: bool = False):
+    def __init__(self, reversible: bool, weighted: bool):
         self.__nodes = 0
         self.__reversible = reversible
-        self.__weighted = weighted  # Indicates if the graph is weighted
+        self.__weighted = weighted
         self._graph = []
 
     def get_graph(self):
@@ -40,14 +48,18 @@ class Graph:
         for row in self._graph:
             row.pop(vertex)
 
-    def create_random(self, n, max_weight=10):
+    def create_random(self, n, max_weight=10, directed=True, weighted=True):
         self.__nodes = n
+        self.__reversible = directed
+        self.__weighted = weighted
         self._graph = [[0] * n for _ in range(n)]
         for i in range(n):
-            for j in range(i + 1, n):
-                if random.random() < 0.5:
+            for j in range(n):
+                if i != j and random.random() < 0.5:
                     weight = random.randint(1, max_weight) if self.__weighted else 1
                     self.add_edge(i, j, weight)
+                    if not directed:
+                        self.add_edge(j, i, weight)
 
     def get_n(self):
         return self.__nodes
@@ -190,3 +202,53 @@ class Graph:
                         paths[i] += paths[node]
 
         return paths[end]
+
+    def build_tree_from_inorder_preorder(self, inorder, preorder):
+        if not inorder or not preorder:
+            return None
+
+        # Helper function to construct the binary tree
+        def build_tree(inorder_map, start, end):
+            if start > end:
+                return None
+
+            # The first element in preorder is the root
+            root_value = preorder.pop(0)
+            root_index = inorder_map[root_value]
+            root = TreeNode(root_value)
+
+            # Build left and right subtrees recursively
+            root.left = build_tree(inorder_map, start, root_index - 1)
+            root.right = build_tree(inorder_map, root_index + 1, end)
+
+            return root
+
+        # Map each value to its index in inorder for O(1) access
+        inorder_map = {value: idx for idx, value in enumerate(inorder)}
+        return build_tree(inorder_map, 0, len(inorder) - 1)
+
+    def add_tree_edges(self, root):
+        if not root:
+            return
+
+        def add_edges(node):
+            if node.left:
+                left_index = self.add_vertex()
+                self.add_edge(node.value, left_index)
+                add_edges(node.left)
+
+            if node.right:
+                right_index = self.add_vertex()
+                self.add_edge(node.value, right_index)
+                add_edges(node.right)
+
+        root_index = self.add_vertex()
+        self.add_edge(root.value, root_index)
+        add_edges(root)
+
+    def print_tree(self, root, depth=0, label="Root:"):
+        if not root:
+            return
+        print(" " * (depth * 2) + label + str(root.value))
+        self.print_tree(root.left, depth + 1, "L---")
+        self.print_tree(root.right, depth + 1, "R---")
